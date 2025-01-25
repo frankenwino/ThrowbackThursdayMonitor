@@ -7,6 +7,41 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 class WebChecker:
+    """
+    A class to check and monitor updates on a specific webpage and extract movie information.
+    Attributes:
+        url (str): The URL of the webpage to monitor.
+        db_file_path (str): The file path to the JSON database file.
+    Methods:
+        download_html(url: str) -> str:
+            Downloads the HTML content of the given URL.
+        html_to_soup(html: str) -> BeautifulSoup:
+            Converts HTML content to a BeautifulSoup object.
+        get_element_by_class(class_name: str, soup: BeautifulSoup) -> Optional[Tag]:
+            Finds the first element with the specified class name in the BeautifulSoup object.
+        get_site_last_changed_date(soup: BeautifulSoup) -> Optional[str]:
+            Extracts the last changed date of the site from the BeautifulSoup object.
+        get_db_last_changed_date() -> Optional[str]:
+            Retrieves the last changed date from the JSON database file.
+        datestring_to_datetime(datestring: str) -> datetime:
+            Converts a date string to a datetime object.
+        open_db_file() -> Dict[str, Any]:
+            Opens and reads the JSON database file.
+        write_db_file(data: Dict[str, Any]) -> None:
+            Writes data to the JSON database file.
+        get_movie_url(soup: BeautifulSoup) -> Optional[str]:
+            Extracts the movie URL from the BeautifulSoup object.
+        get_movie_title(soup: BeautifulSoup) -> Optional[str]:
+            Extracts the movie title from the BeautifulSoup object.
+        get_booking_url(soup: BeautifulSoup) -> Optional[str]:
+            Extracts the booking URL from the BeautifulSoup object.
+        get_screening_datetime(soup: BeautifulSoup) -> Optional[datetime]:
+            Extracts the screening datetime from the BeautifulSoup object.
+        get_screening_location(soup: BeautifulSoup) -> Optional[str]:
+            Extracts the screening location from the BeautifulSoup object.
+        go() -> None:
+            Main method to check for updates, extract movie information, and update the database.
+    """
     def __init__(self, url: str = "https://www.boras.se/upplevaochgora/kulturochnoje/borasbiorodakvarn/throwbackthursday.4.706b03641584ebf5394d6c1a.html", db_file_path: str = "db.json"):
         self.url: str = url
         self.db_file_path: str = db_file_path
