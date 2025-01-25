@@ -5,6 +5,7 @@ from dateutil import parser
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any
+from discord_notifier import DiscordNotifier
 
 class WebChecker:
     """
@@ -45,6 +46,7 @@ class WebChecker:
     def __init__(self, url: str = "https://www.boras.se/upplevaochgora/kulturochnoje/borasbiorodakvarn/throwbackthursday.4.706b03641584ebf5394d6c1a.html", db_file_path: str = "db.json"):
         self.url: str = url
         self.db_file_path: str = db_file_path
+        self.notifier = DiscordNotifier()
 
     def download_html(self, url: str) -> str:
         response = requests.get(url)
@@ -164,5 +166,7 @@ class WebChecker:
             json_data['last_changed_date'] = site_last_changed_date
             json_data['latest_movie_data'] = latest_movie_data
             self.write_db_file(json_data)
+            message = f"New Movie: {movie_title}\nWhen: {screening_datetime}\nWhere: {screening_location}\nBook here: {booking_url}"
+            self.notifier.send_message(message)
         else:
             print("Site has not changed")
