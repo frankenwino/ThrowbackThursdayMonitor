@@ -1,4 +1,7 @@
+from pathlib import Path
 import re
+import aiofiles
+import aiohttp
 import requests
 from bs4 import BeautifulSoup, Tag
 from dateutil import parser
@@ -43,15 +46,21 @@ class WebChecker:
         go() -> None:
             Main method to check for updates, extract movie information, and update the database.
     """
-    def __init__(self, url: str = "https://www.boras.se/upplevaochgora/kulturochnoje/borasbiorodakvarn/throwbackthursday.4.706b03641584ebf5394d6c1a.html", db_file_path: str = "db.json"):
+    def __init__(self, url: str, db_file_path: Path):
         self.url: str = url
         self.db_file_path: str = db_file_path
         self.notifier = DiscordNotifier()
 
-    def download_html(self, url: str) -> str:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
+    # def download_html(self, url: str) -> str:
+    #     response = requests.get(url)
+    #     response.raise_for_status()
+    #     return response.text
+    
+    async def download_html(self, url: str) -> str:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                return await response.text()
 
     def html_to_soup(self, html: str) -> BeautifulSoup:
         return BeautifulSoup(html, 'lxml')
@@ -67,24 +76,25 @@ class WebChecker:
                 return time_element['datetime']
         return None
 
-    def get_db_last_changed_date(self) -> Optional[str]:
-        json_data = self.open_db_file()
+    async def get_db_last_changed_date(self) -> Optional[str]:
+        json_data = await self.open_db_file()
         return json_data.get('last_changed_date')
 
     def datestring_to_datetime(self, datestring: str) -> datetime:
         return parser.parse(datestring)
 
-    def open_db_file(self) -> Dict[str, Any]:
+    async def open_db_file(self) -> Dict[str, Any]:
         try:
-            with open(self.db_file_path, 'r') as file:
-                return json.load(file)
+            async with aiofiles.open(self.db_file_path, 'r') as file:
+                content = await file.read()
+                return json.loads(content)
         except FileNotFoundError:
             return {}
 
-    def write_db_file(self, data: Dict[str, Any]) -> None:
+    async def write_db_file(self, data: Dict[str, Any]) -> None:
         json_data = json.dumps(data)
-        with open(self.db_file_path, 'w') as f:
-            f.write(json_data)
+        async with aiofiles.open(self.db_file_path, 'w') as f:
+            await f.write(json_data)
 
     def get_movie_url(self, soup: BeautifulSoup) -> Optional[str]:
         movie_element = self.get_element_by_class('sv-channel-item', soup)
@@ -116,7 +126,8 @@ class WebChecker:
         if time_element:
             time_tag = time_element.find_next_sibling('time')
             if time_tag and 'datetime' in time_tag.attrs:
-                return datetime.fromisoformat(time_tag['datetime'])
+                dt = datetime.fromisoformat(time_tag['datetime'])
+                return dt.strftime('%Y-%m-%d %H:%M')
         return None
     
     def get_screening_location(self, soup: BeautifulSoup) -> Optional[str]:
@@ -127,15 +138,15 @@ class WebChecker:
                 return location_text.strip()
         return None
 
-    def go(self) -> None:
-        html = self.download_html(self.url)
+    async def go(self) -> None:
+        html = await self.download_html(self.url)
         soup = self.html_to_soup(html)
         site_last_changed_date = self.get_site_last_changed_date(soup)
-        db_last_changed_date = self.get_db_last_changed_date()
+        db_last_changed_date = await self.get_db_last_changed_date()
 
         if db_last_changed_date is None or site_last_changed_date > db_last_changed_date:
             movie_url = self.get_movie_url(soup)
-            movie_html = self.download_html(movie_url)
+            movie_html = await self.download_html(movie_url)
             movie_soup = self.html_to_soup(movie_html)
 
             movie_title = self.get_movie_title(movie_soup)
@@ -156,17 +167,17 @@ class WebChecker:
 
             latest_movie_data = {
                 'title': movie_title,
-                'screening_datetime': screening_datetime.isoformat() if screening_datetime else None,
+                'screening_datetime': screening_datetime,
                 'location': screening_location,
                 'booking_url': booking_url,
                 'movie_url': movie_url
             }
 
-            json_data = self.open_db_file()
+            json_data = await self.open_db_file()
             json_data['last_changed_date'] = site_last_changed_date
             json_data['latest_movie_data'] = latest_movie_data
-            self.write_db_file(json_data)
-            message = f"New Movie: {movie_title}\nWhen: {screening_datetime}\nWhere: {screening_location}\nBook here: {booking_url}"
+            await self.write_db_file(json_data)
+            message = f"New Movie: {movie_title}\nWhen: {screening_datetime}\nWhere: {screening_location}\nDetails: <{movie_url}>\nBook here: <{booking_url}>"
             self.notifier.send_message(message)
         else:
             print("Site has not changed")
