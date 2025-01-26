@@ -19,7 +19,7 @@ A Python script that monitors Borås Bio Röda Kvarn's Throwback Thursday movie 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/ThrowbackThursdayMonitor.git
+git clone https://github.com/frankenwino/ThrowbackThursdayMonitor.git
 cd ThrowbackThursdayMonitor
 ```
 
