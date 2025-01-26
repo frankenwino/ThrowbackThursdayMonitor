@@ -16,12 +16,12 @@ class DiscordNotifier:
         load_dotenv()
         self.webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
         
-    # def send_message(self, message: str) -> None:
-    #     webhook = DiscordWebhook(url=self.webhook_url, content=message)
-    #     webhook.execute()
+    def send_message(self, message: str) -> None:
+        webhook = DiscordWebhook(url=self.webhook_url, content=message)
+        webhook.execute()
         
         
-    def send_message(self, embed: DiscordEmbed) -> None:
+    def send_embed(self, embed: DiscordEmbed) -> None:
         webhook = DiscordWebhook(url=self.webhook_url)
         webhook.add_embed(embed)
         response = webhook.execute()

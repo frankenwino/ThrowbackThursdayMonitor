@@ -152,47 +152,51 @@ class WebChecker:
         )
                 
     async def go(self) -> None:
-        html = await self.download_html(self.url)
-        soup = self.html_to_soup(html)
-        site_last_changed_date = self.get_site_last_changed_date(soup)
-        db_last_changed_date = await self.get_db_last_changed_date()
+        try:
+            html = await self.download_html(self.url)
+            soup = self.html_to_soup(html)
+            site_last_changed_date = self.get_site_last_changed_date(soup)
+            db_last_changed_date = await self.get_db_last_changed_date()
 
-        if db_last_changed_date is None or site_last_changed_date > db_last_changed_date:
-            movie_url = self.get_movie_url(soup)
-            movie_html = await self.download_html(movie_url)
-            movie_soup = self.html_to_soup(movie_html)
+            if db_last_changed_date is None or site_last_changed_date > db_last_changed_date:
+                movie_url = self.get_movie_url(soup)
+                movie_html = await self.download_html(movie_url)
+                movie_soup = self.html_to_soup(movie_html)
 
-            movie_title = self.get_movie_title(movie_soup)
-            if movie_title:
-                print(f"Movie title: {movie_title}")
+                movie_title = self.get_movie_title(movie_soup)
+                if movie_title:
+                    print(f"Movie title: {movie_title}")
 
-            screening_datetime = self.get_screening_datetime(movie_soup)
-            if screening_datetime:
-                print(f"Screening time: {screening_datetime}")
+                screening_datetime = self.get_screening_datetime(movie_soup)
+                if screening_datetime:
+                    print(f"Screening time: {screening_datetime}")
 
-            screening_location = self.get_screening_location(movie_soup)
-            if screening_location:
-                print(f"Location: {screening_location}")
+                screening_location = self.get_screening_location(movie_soup)
+                if screening_location:
+                    print(f"Location: {screening_location}")
 
-            booking_url = self.get_booking_url(movie_soup)
-            if booking_url:
-                print(f"Booking URL: {booking_url}")
+                booking_url = self.get_booking_url(movie_soup)
+                if booking_url:
+                    print(f"Booking URL: {booking_url}")
 
-            latest_movie_data = {
-                'title': movie_title,
-                'screening_datetime': screening_datetime,
-                'location': screening_location,
-                'booking_url': booking_url,
-                'movie_url': movie_url
-            }      
-      
-            json_data = await self.open_db_file()
-            json_data['last_changed_date'] = site_last_changed_date
-            json_data['latest_movie_data'] = latest_movie_data
-            await self.write_db_file(json_data)
-                      
-            embed = self.generate_embed(movie_title, screening_datetime, screening_location, movie_url, booking_url)
-            self.notifier.send_message(embed)
+                latest_movie_data = {
+                    'title': movie_title,
+                    'screening_datetime': screening_datetime,
+                    'location': screening_location,
+                    'booking_url': booking_url,
+                    'movie_url': movie_url
+                }      
+        
+                json_data = await self.open_db_file()
+                json_data['last_changed_date'] = site_last_changed_date
+                json_data['latest_movie_data'] = latest_movie_data
+                await self.write_db_file(json_data)
+                        
+                embed = self.generate_embed(movie_title, screening_datetime, screening_location, movie_url, booking_url)
+                self.notifier.send_embed(embed)
 
-        else:
-            print("Site has not changed")
+            else:
+                print("Site has not changed")
+        except Exception as e:
+            error_msg = f"An error occurred in {Path(__file__).parts[-3]}/{Path(__file__).parts[-2]}/{Path(__file__).name}:\n**{type(e).__name__}**: {e}"
+            self.notifier.send_message(error_msg)
