@@ -2,6 +2,7 @@ from pathlib import Path
 import re
 import aiofiles
 import aiohttp
+from discord_webhook import DiscordEmbed
 import requests
 from bs4 import BeautifulSoup, Tag
 from dateutil import parser
@@ -138,6 +139,18 @@ class WebChecker:
                 return location_text.strip()
         return None
 
+    def generate_embed(self, movie_title: str, screening_datetime: str, screening_location: str, movie_url: str, booking_url: str) -> DiscordEmbed:
+        return DiscordEmbed(
+            title=f"New Screening: {movie_title}",
+            description=(
+                f"**When:** {screening_datetime}\n"
+                f"**Where:** {screening_location}\n"
+                f"**Details:** [View More]({movie_url})\n"
+                f"**Book here:** [Click to Book]({booking_url})"
+            ),
+            color=0x00FF00  # Optional: Set an embed color (hex code)
+        )
+                
     async def go(self) -> None:
         html = await self.download_html(self.url)
         soup = self.html_to_soup(html)
@@ -171,13 +184,15 @@ class WebChecker:
                 'location': screening_location,
                 'booking_url': booking_url,
                 'movie_url': movie_url
-            }
-
+            }      
+      
             json_data = await self.open_db_file()
             json_data['last_changed_date'] = site_last_changed_date
             json_data['latest_movie_data'] = latest_movie_data
             await self.write_db_file(json_data)
-            message = f"New Movie: {movie_title}\nWhen: {screening_datetime}\nWhere: {screening_location}\nDetails: <{movie_url}>\nBook here: <{booking_url}>"
-            self.notifier.send_message(message)
+                      
+            embed = self.generate_embed(movie_title, screening_datetime, screening_location, movie_url, booking_url)
+            self.notifier.send_message(embed)
+
         else:
             print("Site has not changed")
