@@ -6,6 +6,7 @@ from discord_webhook import DiscordEmbed
 import requests
 from bs4 import BeautifulSoup, Tag
 from dateutil import parser
+import asyncio
 import json
 from datetime import datetime
 from typing import Optional, Dict, Any
@@ -58,10 +59,22 @@ class WebChecker:
     #     return response.text
     
     async def download_html(self, url: str) -> str:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                response.raise_for_status()
-                return await response.text()
+        """Download HTML content with an explicit timeout and improved error handling.
+
+        Uses aiohttp with a ClientTimeout so the coroutine fails fast when the
+        remote host is unreachable. Raises ConnectionError on network errors
+        or timeouts so callers can handle/report them clearly.
+        """
+        timeout = aiohttp.ClientTimeout(total=10)
+        try:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url) as response:
+                    response.raise_for_status()
+                    return await response.text()
+        except asyncio.TimeoutError:
+            raise ConnectionError(f"Timeout while connecting to {url}")
+        except aiohttp.ClientError as e:
+            raise ConnectionError(f"Network error while requesting {url}: {e}")
 
     def html_to_soup(self, html: str) -> BeautifulSoup:
         return BeautifulSoup(html, 'lxml')
