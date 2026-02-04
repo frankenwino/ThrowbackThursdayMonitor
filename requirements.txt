@@ -14,7 +14,7 @@ pytest==8.3.4
 pytest-asyncio==0.24.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
-requests==2.32.3
+requests==2.32.4
 six==1.17.0
 soupsieve==2.6
 urllib3==2.3.0
