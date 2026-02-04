@@ -1,5 +1,5 @@
 import asyncio
-from checker import WebChecker
+from browser_scraper import BrowserWebChecker
 from pathlib import Path
 
 async def main():
@@ -7,7 +7,8 @@ async def main():
     directory: Path = Path(__file__).resolve().parent
     db_file_path: Path = Path(directory, 'db.json')
     
-    web_checker = WebChecker(url=url, db_file_path=db_file_path)
+    # Use the new browser-based scraper
+    web_checker = BrowserWebChecker(url=url, db_file_path=db_file_path, headless=True)
     await web_checker.go()
 
 if __name__ == "__main__":
