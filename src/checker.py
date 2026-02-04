@@ -109,9 +109,27 @@ class WebChecker:
         movie_title_element = self.get_element_by_class('sidrubrik', soup)
         if movie_title_element:
             movie_title_text = movie_title_element.get_text(strip=True)
+            
+            # First try to find title in quotes (original format)
             match = re.search(r'"(.*?)"', movie_title_text)
             if match:
                 return match.group(1)
+            
+            # New format: "Throwback Thursday: Title (Year)"
+            # Extract everything between "Throwback Thursday: " and " (year)"
+            throwback_match = re.search(r'Throwback Thursday:\s*(.+?)\s*\(\d{4}\)', movie_title_text)
+            if throwback_match:
+                return throwback_match.group(1).strip()
+            
+            # Fallback: if it contains "Throwback Thursday:" but no year, extract after the colon
+            if 'Throwback Thursday:' in movie_title_text:
+                parts = movie_title_text.split('Throwback Thursday:', 1)
+                if len(parts) > 1:
+                    title = parts[1].strip()
+                    # Remove year in parentheses if present
+                    title = re.sub(r'\s*\(\d{4}\)\s*$', '', title)
+                    return title.strip()
+        
         return None
 
     def get_booking_url(self, soup: BeautifulSoup) -> Optional[str]:
