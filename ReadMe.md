@@ -54,13 +54,29 @@ playwright install chromium
 cp .env.example .env
 ```
 
-2. Edit `.env` and add your Discord webhook URL:
+2. Edit `.env` with your settings:
 
 ```env
+# Required: Discord webhook for new screening notifications
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
+
+# Optional: Discord bot token (required only for bulk-deleting channel messages)
+# Found in Discord Developer Portal → Your App → Bot → Reset Token
+DISCORD_BOT_TOKEN=your_bot_token_here
+
+# Optional: run browser in non-headless mode for debugging (default: true)
+HEADLESS_BROWSER=true
+
+# Optional: check interval in seconds — informational only, not used by the script (default: 3600)
+CHECK_INTERVAL=3600
+
+# Optional: logging verbosity (default: INFO)
+LOG_LEVEL=INFO
 ```
 
 For more information on how to create a Discord webhook, refer to the [Discord Webhooks Guide](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks).
+
+`DISCORD_WEBHOOK_URL` is the only required variable. All others are optional.
 
 ## Usage
 
@@ -90,7 +106,7 @@ pytest tests/
 Run with visible browser (for debugging):
 
 ```bash
-# Edit .env file and set:
+# In .env set:
 HEADLESS_BROWSER=false
 ```
 
