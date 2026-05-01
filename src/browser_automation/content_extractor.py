@@ -329,7 +329,11 @@ class ContentExtractor:
 
     def _parse_swedish_date(self, text: str) -> Optional[str]:
         """
-        Parse a Swedish date string like "19 december, 2025" into "2025-12-19".
+        Parse a Swedish date string like "19 december, 2025" into an ISO datetime string.
+
+        Returns "YYYY-MM-DDT23:59:59" so that a same-day stored timestamp
+        (e.g. "2025-12-19T09:06:47+01:00") compares as less-than this value,
+        correctly triggering a re-check.
         """
         pattern = r'(\d{1,2})\s+([a-zåäö]+),?\s+(\d{4})'
         match = re.search(pattern, text.lower())
@@ -341,4 +345,4 @@ class ContentExtractor:
         if not month:
             return None
 
-        return f"{year}-{month}-{day.zfill(2)}"
+        return f"{year}-{month}-{day.zfill(2)}T23:59:59"

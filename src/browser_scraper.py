@@ -79,7 +79,7 @@ class BrowserWebChecker:
             logger.info(f"DB last changed:   {db_last_changed}")
 
             if db_last_changed is None or (
-                site_last_changed and site_last_changed > db_last_changed
+                site_last_changed and site_last_changed > db_last_changed[:19]
             ):
                 logger.info("Change detected — extracting movie data...")
 
